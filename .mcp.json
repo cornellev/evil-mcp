@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "evil": {
+      "type": "http",
+      "url": "http://100.122.165.58:8765/mcp"
+    }
+  }
+}
