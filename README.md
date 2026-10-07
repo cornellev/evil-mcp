@@ -4,8 +4,9 @@ Connect your AI client to **EVIL**, Cornell Electric Vehicles' telemetry databas
 (runs, turns, laps, straights, energy, NAS recordings), so you can ask about the
 car in plain English from Claude Code, Codex or Cursor.
 
-> You must be on the CEV Tailscale network. The server is at
-> `http://100.122.165.58:8765/mcp` (the NUC, `cev-nuc`). It is read-only.
+> You must be on the CEV Tailscale network. The curated server is at
+> `http://100.122.165.58:8765/mcp` (the NUC, `cev-nuc`) and the raw-SQL server at
+> `http://100.122.165.58:8767/mcp`. Both are read-only.
 
 ## Just want a browser?
 
@@ -18,7 +19,7 @@ setup.
 git clone https://github.com/cornellev/evil-mcp.git && cd evil-mcp && ./install.sh
 ```
 
-`install.sh` registers EVIL globally for whichever of Claude Code, Codex and
+`install.sh` registers EVIL (`evil` and `evil-raw`) globally for whichever of Claude Code, Codex and
 Cursor it finds, so it works from any project. Re-running is safe;
 `./install.sh --dry-run` shows what it would do. Restart your client afterwards,
 then ask: *"List the EVIL runs."*
@@ -36,9 +37,9 @@ installer for everything else.
 
 | Client | Command / config |
 |---|---|
-| Claude Code | `claude mcp add --transport http --scope user evil http://100.122.165.58:8765/mcp` |
-| Codex | `codex mcp add evil --url http://100.122.165.58:8765/mcp` |
-| Cursor | add `{"mcpServers": {"evil": {"url": "http://100.122.165.58:8765/mcp"}}}` to `~/.cursor/mcp.json` |
+| Claude Code | `claude mcp add --transport http --scope user evil http://100.122.165.58:8765/mcp` and `... evil-raw http://100.122.165.58:8767/mcp` |
+| Codex | `codex mcp add evil --url http://100.122.165.58:8765/mcp` and `codex mcp add evil-raw --url http://100.122.165.58:8767/mcp` |
+| Cursor | add `"evil": {"url": ".../8765/mcp"}` and `"evil-raw": {"url": ".../8767/mcp"}` under `mcpServers` in `~/.cursor/mcp.json` |
 
 Any other MCP client: Streamable HTTP transport, that URL, no auth.
 
@@ -55,7 +56,9 @@ or append `AGENTS.md` into your own project, or into `~/.codex/AGENTS.md`.
 - "How was Turn 3 in run `<run_id>`?"
 - "Compare laps 2 and 5. What changed in energy and average speed?"
 - "Which turn instance had the best exit speed, and what was different about it?"
-- "Where is the raw recording covering Turn 7 on the NAS?"
+- "Where is the raw recording covering Turn 7?"
+- "What recordings do we have from last weekend, and which ones didn't parse?"
+- "(raw) What topics are in that bag, and how many messages on each?"
 
 ## Troubleshooting
 
@@ -70,12 +73,15 @@ or append `AGENTS.md` into your own project, or into `~/.codex/AGENTS.md`.
 
 ## Notes
 
-- Verified against a real server: the endpoint and the nine tools respond. The
+- `evil-raw` is a separate server on purpose: it gives free-form SQL over stored files, so it
+  is kept off the port the web UI and the in-app assistant use. Everything that comes back
+  from a recording file is untrusted data (the guidance in `AGENTS.md` says so).
+- Verified against a real server: the endpoint and the original nine tools respond. The
   Claude Code setup is tested by the author. The Codex and Cursor configs follow
   those clients' current documentation but have not been run end to end; fix the
   file and open a PR if one is off.
-- Only the read port (`:8765`) is wired up here. EVIL's separate upload port is
-  not part of this repo.
+- Only the two read ports (`:8765` curated, `:8767` raw SQL) are wired up here. EVIL's
+  separate upload port is not part of this repo.
 - Guidance lives once, in `AGENTS.md`. After editing it, run
   `scripts/sync-skill.sh` to regenerate the Claude skill
   (`scripts/sync-skill.sh --check` fails if they have drifted).
