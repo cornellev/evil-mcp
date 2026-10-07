@@ -36,7 +36,7 @@ telemetry values. If a tool did not return it, say so.
 - **recording**: one uploaded file set (a rosbag2 folder, a CSV, a video...), kept
   exactly as uploaded, with a `recording_id`. Each telemetry recording that parses
   becomes one run (`recordings.run_id`). Recordings carry category (competition /
-  testing / bench / sim / other), car, event, recorded time range, location, and a
+  testing / bench / sim / b_lot (Cornell B Lot, Ithaca) / other), car, event, recorded time range, location, and a
   `parse_status`: `parsed`, `pending`/`running`, `skipped` (stored but not a known
   telemetry format, or unreadable) or `failed`. Unparsed recordings have no runs,
   turns or laps, but are still stored and can be inspected.
