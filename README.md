@@ -24,6 +24,45 @@ Cursor it finds, so it works from any project. Re-running is safe;
 `./install.sh --dry-run` shows what it would do. Restart your client afterwards,
 then ask: *"List the EVIL runs."*
 
+## Only for one project
+
+If you'd rather not have EVIL in every session (privacy, or to keep its skill out
+of the way in unrelated projects), scope it to one directory:
+
+```bash
+./install.sh --project ~/path/to/your/project
+```
+
+EVIL is then on only in sessions started in that directory or any subdirectory.
+It writes `.mcp.json` and `.claude/skills/evil/` there, plus `.cursor/mcp.json` and
+`.codex/config.toml` if you have those clients. If the directory is a git repo,
+the new files are added to `.git/info/exclude`, so they never get committed. If
+your project already tracks a `.mcp.json`, the EVIL entries will show in
+`git status`; the script tells you when that happens. Claude Code asks you once
+to approve the project's servers the first time you start a session there.
+
+To switch from global to project-only, remove the global install first:
+
+```bash
+./install.sh --uninstall                       # remove the global install
+./install.sh --project ~/path/to/your/project  # then scope it
+```
+
+`./install.sh --uninstall --project DIR` removes it from a project. Neither form
+touches other servers in the same config files.
+
+## Updating
+
+| What changed | What you do |
+|---|---|
+| Tools on the server (new tool, fixed tool, new data) | Nothing. Restart your client or start a new session and it picks up the new tool list. |
+| The guidance (`AGENTS.md` / the Claude skill), or a new server or URL | `git pull && ./install.sh` in your clone (add `--project DIR` if that's how you installed), then restart your client. |
+
+`install.sh` is both the installer and the updater. Re-running it adds any new
+servers, re-points entries whose URL changed and refreshes the Claude skill. It
+leaves alone anything already up to date. Codex and Cursor users who copied
+`AGENTS.md` somewhere by hand need to copy it again after pulling.
+
 ## Or: no install, just open this repo
 
 The repo carries each client's project-level config, so opening this folder in the
@@ -84,4 +123,6 @@ or append `AGENTS.md` into your own project, or into `~/.codex/AGENTS.md`.
   separate upload port is not part of this repo.
 - Guidance lives once, in `AGENTS.md`. After editing it, run
   `scripts/sync-skill.sh` to regenerate the Claude skill
-  (`scripts/sync-skill.sh --check` fails if they have drifted).
+  (`scripts/sync-skill.sh --check` fails if they have drifted). Then commit and tell
+  the team to run `git pull && ./install.sh`. Server-side tool changes need no
+  announcement beyond "restart your client".
