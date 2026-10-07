@@ -1,2 +1,5 @@
 [mcp_servers.evil]
 url = "http://100.122.165.58:8765/mcp"
+
+[mcp_servers.evil-raw]
+url = "http://100.122.165.58:8767/mcp"

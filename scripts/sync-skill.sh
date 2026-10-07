@@ -12,7 +12,7 @@ trap 'rm -f "$tmp"' EXIT
   cat <<'HEADER'
 ---
 name: evil
-description: Query Cornell Electric Vehicles' EVIL telemetry database (runs, turns, laps, straights, energy, NAS recordings) through the `evil` MCP server. Use for any question about recorded car runs, turn or lap performance, or finding raw recordings.
+description: Query Cornell Electric Vehicles' EVIL telemetry database (runs, turns, laps, straights, energy, uploaded recordings) through the `evil` and `evil-raw` MCP servers. Use for any question about recorded car runs, turn or lap performance, or finding and inspecting raw recordings.
 ---
 
 HEADER
