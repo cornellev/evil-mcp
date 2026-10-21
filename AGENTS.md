@@ -42,8 +42,14 @@ telemetry values. If a tool did not return it, say so.
   turns or laps, but are still stored and can be inspected.
 
 Timestamps (`ts`, `start_ts`, `end_ts`, `global_ts`) are floating-point seconds.
-Do not assume speed units. Report speeds as the raw numbers the tools return and
-say the unit is unconfirmed unless the user tells you.
+Units: speeds (`entry_speed`, `exit_speed`, `avg_speed`, `speed_delta`) are m/s
+(the telemetry's filtered/GPS speed; checked on real data against distance / duration),
+energy is Wh (`energy_wh`, not kWh), distance m, durations s, efficiency mi/kWh. The team
+usually talks in mph: 1 m/s = 2.237 mph.
+
+`list_runs` returns `lap_count` (laps) and `sample_count` (raw telemetry rows). Never
+report `sample_count` as a number of laps. In `compare_laps`, `delta` is lap_b minus
+lap_a, not lap_b's own values.
 
 ## Tools: which to use when
 
