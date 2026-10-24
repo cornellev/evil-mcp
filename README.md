@@ -51,6 +51,14 @@ To switch from global to project-only, remove the global install first:
 `./install.sh --uninstall --project DIR` removes it from a project. Neither form
 touches other servers in the same config files.
 
+### Your name in EVIL's traces
+
+`install.sh` adds an `X-EVIL-User` header with your `git config --global user.name` to each
+server entry, so EVIL's traces (Phoenix, `http://cev-traces`) show who asked what. It is
+self-declared, not a login, and nothing is refused without it. `EVIL_USER="Name" ./install.sh`
+sets a different name, `EVIL_USER= ./install.sh` sends none. Re-run the installer to add it to an
+existing install.
+
 ## Updating
 
 | What changed | What you do |

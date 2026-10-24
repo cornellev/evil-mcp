@@ -13,9 +13,13 @@
 #   ./install.sh --dry-run ...         show what would change
 #   EVIL_MCP_URL=http://host:8765/mcp ./install.sh   override the curated endpoint
 #   EVIL_RAW_URL=http://host:8767/mcp ./install.sh   override the raw-SQL endpoint
+#   EVIL_USER="Jane Doe" ./install.sh  name sent with your calls (default: git user.name)
+#   EVIL_USER= ./install.sh            send no name
 #
 # Registers two servers: `evil` (curated tools, port 8765) and `evil-raw`
 # (free-form read-only SQL over stored recordings and the catalog, port 8767).
+# Each sends an X-EVIL-User header with your name, so EVIL's traces show who
+# asked what. It is self-declared, not a login; nothing is refused without it.
 #
 # --project writes DIR/.mcp.json and DIR/.claude/skills/evil/ (plus
 # DIR/.cursor/mcp.json and DIR/.codex/config.toml if those clients are
@@ -25,6 +29,7 @@ set -euo pipefail
 
 URL="${EVIL_MCP_URL:-http://100.122.165.58:8765/mcp}"
 RAW_URL="${EVIL_RAW_URL:-http://100.122.165.58:8767/mcp}"
+EVIL_USER="${EVIL_USER-$(git config --global user.name 2>/dev/null || echo "${USER:-}")}"
 DRY=0
 UNINSTALL=0
 PROJECT=""
@@ -63,9 +68,9 @@ json_servers() {
   fi
   ((UNINSTALL)) && [[ ! -f "$path" ]] && { echo "  nothing to remove, no $path"; return; }
   mkdir -p "$(dirname "$path")"
-  python3 - "$path" "$with_type" "$UNINSTALL" "$URL" "$RAW_URL" <<'PY'
+  python3 - "$path" "$with_type" "$UNINSTALL" "$URL" "$RAW_URL" "$EVIL_USER" <<'PY'
 import json, os, sys
-path, with_type, uninstall, url, raw_url = sys.argv[1:6]
+path, with_type, uninstall, url, raw_url, user = sys.argv[1:7]
 data = {}
 if os.path.exists(path):
     with open(path) as f:
@@ -86,6 +91,8 @@ if uninstall == "1":
 else:
     for name, u in (("evil", url), ("evil-raw", raw_url)):
         servers[name] = {"type": "http", "url": u} if with_type == "http" else {"url": u}
+        if user:
+            servers[name]["headers"] = {"X-EVIL-User": user}
     msg = f"  wrote evil and evil-raw entries to {path}"
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
@@ -106,16 +113,17 @@ toml_servers() {
   fi
   ((UNINSTALL)) && [[ ! -f "$path" ]] && { echo "  nothing to remove, no $path"; return; }
   mkdir -p "$(dirname "$path")"
-  python3 - "$path" "$UNINSTALL" "$URL" "$RAW_URL" <<'PY'
-import os, re, sys
-path, uninstall, url, raw_url = sys.argv[1:5]
+  python3 - "$path" "$UNINSTALL" "$URL" "$RAW_URL" "$EVIL_USER" <<'PY'
+import json, os, re, sys
+path, uninstall, url, raw_url, user = sys.argv[1:6]
+headers = f'\nhttp_headers = {{ "X-EVIL-User" = {json.dumps(user)} }}' if user else ""
 text = open(path).read() if os.path.exists(path) else ""
 for name in ("evil", "evil-raw"):
     text = re.sub(rf"(?ms)^\[mcp_servers\.{re.escape(name)}\]\n.*?(?=^\[|\Z)", "", text)
 text = text.rstrip("\n")
 if uninstall != "1":
     text += ("\n\n" if text else "") + (
-        f'[mcp_servers.evil]\nurl = "{url}"\n\n[mcp_servers.evil-raw]\nurl = "{raw_url}"'
+        f'[mcp_servers.evil]\nurl = "{url}"{headers}\n\n[mcp_servers.evil-raw]\nurl = "{raw_url}"{headers}'
     )
 if text:
     with open(path, "w") as f:
@@ -163,15 +171,17 @@ claude_register() {
     else echo "  nothing to remove, $name not registered globally"; fi
     return
   fi
+  local header=()
+  [[ -n "$EVIL_USER" ]] && header=(--header "X-EVIL-User: $EVIL_USER")
   if [[ -n "$info" ]]; then
-    if grep -qF "URL: $url" <<<"$info"; then
+    if grep -qF "URL: $url" <<<"$info" && { [[ -z "$EVIL_USER" ]] || grep -qF "X-EVIL-User: $EVIL_USER" <<<"$info"; }; then
       echo "  $name MCP already registered globally, up to date"
       return
     fi
-    echo "  $name MCP registered with a different URL, re-pointing it"
+    echo "  $name MCP registered with a different URL or name, re-registering it"
     run claude mcp remove --scope user "$name"
   fi
-  run claude mcp add --transport http --scope user "$name" "$url"
+  run claude mcp add --transport http --scope user "${header[@]}" "$name" "$url"
 }
 
 codex_register() {
@@ -183,6 +193,8 @@ codex_register() {
     echo "  $name MCP already registered, leaving as is"
   else
     run codex mcp add "$name" --url "$url"
+    [[ -n "$EVIL_USER" ]] && echo "  note: to send your name with Codex calls, add under [mcp_servers.$name] in ~/.codex/config.toml:" \
+      "http_headers = { \"X-EVIL-User\" = \"$EVIL_USER\" }"
   fi
 }
 
@@ -208,6 +220,7 @@ git_exclude() {
 
 echo "EVIL endpoint: $URL"
 echo "EVIL raw-SQL endpoint: $RAW_URL"
+echo "Name sent with your calls (X-EVIL-User): ${EVIL_USER:-(none)}"
 if [[ -n "$PROJECT" ]]; then echo "Scope: $PROJECT and its subdirectories"
 else echo "Scope: global (every project)"; fi
 
