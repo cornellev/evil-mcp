@@ -23,8 +23,8 @@
 # .git/info/exclude so they stay out of commits.
 set -euo pipefail
 
-URL="${EVIL_MCP_URL:-http://100.122.165.58:8765/mcp}"
-RAW_URL="${EVIL_RAW_URL:-http://100.122.165.58:8767/mcp}"
+URL="${EVIL_MCP_URL:-https://cev-mcp.tail4ccb95.ts.net/mcp}"
+RAW_URL="${EVIL_RAW_URL:-https://cev-mcp-raw.tail4ccb95.ts.net/mcp}"
 DRY=0
 UNINSTALL=0
 PROJECT=""
@@ -179,9 +179,13 @@ codex_register() {
   if ((UNINSTALL)); then
     if codex mcp get "$name" >/dev/null 2>&1; then run codex mcp remove "$name"
     else echo "  nothing to remove, $name not registered"; fi
-  elif codex mcp get "$name" >/dev/null 2>&1; then
-    echo "  $name MCP already registered, leaving as is"
+  elif codex mcp get "$name" 2>/dev/null | grep -qF "$url"; then
+    echo "  $name MCP already registered, up to date"
   else
+    if codex mcp get "$name" >/dev/null 2>&1; then
+      echo "  $name MCP registered with a different URL, re-pointing it"
+      run codex mcp remove "$name"
+    fi
     run codex mcp add "$name" --url "$url"
   fi
 }

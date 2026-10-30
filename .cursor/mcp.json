@@ -1,10 +1,10 @@
 {
   "mcpServers": {
     "evil": {
-      "url": "http://100.122.165.58:8765/mcp"
+      "url": "https://cev-mcp.tail4ccb95.ts.net/mcp"
     },
     "evil-raw": {
-      "url": "http://100.122.165.58:8767/mcp"
+      "url": "https://cev-mcp-raw.tail4ccb95.ts.net/mcp"
     }
   }
 }

@@ -5,12 +5,12 @@ Connect your AI client to **EVIL**, Cornell Electric Vehicles' telemetry databas
 car in plain English from Claude Code, Codex or Cursor.
 
 > You must be on the CEV Tailscale network. The curated server is at
-> `http://100.122.165.58:8765/mcp` (the NUC, `cev-nuc`) and the raw-SQL server at
-> `http://100.122.165.58:8767/mcp`. Both are read-only.
+> `https://cev-mcp.tail4ccb95.ts.net/mcp` (the NUC, `cev-nuc`) and the raw-SQL server at
+> `https://cev-mcp-raw.tail4ccb95.ts.net/mcp`. Both are read-only.
 
 ## Just want a browser?
 
-Open **http://100.122.165.58:8081** (EVIL-UI). Data browser plus a chat panel. No
+Open **https://cev-evil.tail4ccb95.ts.net** (EVIL-UI). Data browser plus a chat panel. No
 setup.
 
 ## Fastest setup: one command
@@ -79,8 +79,8 @@ installer for everything else.
 
 | Client | Command / config |
 |---|---|
-| Claude Code | `claude mcp add --transport http --scope user evil http://100.122.165.58:8765/mcp` and `... evil-raw http://100.122.165.58:8767/mcp` |
-| Codex | `codex mcp add evil --url http://100.122.165.58:8765/mcp` and `codex mcp add evil-raw --url http://100.122.165.58:8767/mcp` |
+| Claude Code | `claude mcp add --transport http --scope user evil https://cev-mcp.tail4ccb95.ts.net/mcp` and `... evil-raw https://cev-mcp-raw.tail4ccb95.ts.net/mcp` |
+| Codex | `codex mcp add evil --url https://cev-mcp.tail4ccb95.ts.net/mcp` and `codex mcp add evil-raw --url https://cev-mcp-raw.tail4ccb95.ts.net/mcp` |
 | Cursor | add `"evil": {"url": ".../8765/mcp"}` and `"evil-raw": {"url": ".../8767/mcp"}` under `mcpServers` in `~/.cursor/mcp.json` |
 
 Any other MCP client: Streamable HTTP transport, that URL, no auth.
