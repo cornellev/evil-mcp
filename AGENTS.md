@@ -48,7 +48,16 @@ energy is Wh (`energy_wh`, not kWh), distance m, durations s, efficiency mi/kWh.
 usually talks in mph: 1 m/s = 2.237 mph.
 
 `list_runs` returns `lap_count` (laps) and `sample_count` (raw telemetry rows). Never
-report `sample_count` as a number of laps. In `compare_laps`, `delta` is lap_b minus
+report `sample_count` as a number of laps. "The latest run" may have 0 laps (a short
+test); for lap questions say which run you used, and use the latest run with
+`lap_count > 0` when the user asks about laps.
+
+Two tiers. Each run has `tier`: `upload` (a parsed recording, complete) or `live`
+(received over the car's live feed: approximate, it can miss messages). `status` is
+`recording` for the run being recorded right now (listed first; its numbers keep
+growing), else `closed`. A live run whose full upload is parsed is hidden from
+`list_runs` (the upload's `linked_run_id` names it; `include_live_twins=true` shows it).
+Prefer the upload; say "live, approximate" when you quote a live run. In `compare_laps`, `delta` is lap_b minus
 lap_a, not lap_b's own values.
 
 ## Tools: which to use when
@@ -56,6 +65,8 @@ lap_a, not lap_b's own values.
 | Question | Tool |
 |---|---|
 | What runs exist? | `list_runs` |
+| What is happening right now (speed, power, current lap, segment, laps so far)? | `get_live_status`: also says whether the car's feed is alive and whether a run is recording |
+| How did the last N seconds go? | `get_live_window(seconds)`: recent samples of the recording run, downsampled |
 | What turns / laps / straights are in a run? | `list_turns`, `list_laps`, `list_straights` (paginated: `limit`, `offset`) |
 | How was one straight? | `get_straight(run_id, straight_name, occurrence)`: e.g. `"6-7"` or `"Straight 6-7"` |
 | What are the track's segments? | `list_track_segments`: the 13 turns + 4 straights in lap order, with lengths |
@@ -65,7 +76,7 @@ lap_a, not lap_b's own values.
 | What recordings exist (by date, category, car, status)? | `list_recordings(since, until, category, car, parse_status)` (`since`/`until` are epoch seconds) |
 | What is in one recording (files, topics, time range, location, why it did not parse)? | `describe_recording(recording_id)` |
 | Where is the raw footage/bag for this moment? | `find_nas_files(run_id, start_ts, end_ts)`: pass a turn's `start_ts`/`end_ts` to get the stored recordings (any source) that overlap it |
-| Anything else about parsed runs | `read_only_sql` |
+| Anything else about parsed runs | `read_only_sql` (live runs are in the attached `live` database: `live.main_snapshot`, `live.runs`) |
 | Anything about the raw files or the catalog that the tools above cannot answer | `evil-raw`: `query_recording_sql`, `catalog_sql` (see below) |
 
 `turn_name` is forgiving: `"3"` resolves to `"Turn 3"`. Unmatched names return
