@@ -19,7 +19,7 @@ setup.
 git clone https://github.com/cornellev/evil-mcp.git && cd evil-mcp && ./install.sh
 ```
 
-`install.sh` registers EVIL (`evil` and `evil-raw`) globally for whichever of Claude Code, Codex and
+`install.sh` registers EVIL (`evil` and `evil-raw`) and the team-docs search (`cev-knowledge`) globally for whichever of Claude Code, Codex and
 Cursor it finds, so it works from any project. Re-running is safe;
 `./install.sh --dry-run` shows what it would do. Restart your client afterwards,
 then ask: *"List the EVIL runs."*
@@ -79,9 +79,9 @@ installer for everything else.
 
 | Client | Command / config |
 |---|---|
-| Claude Code | `claude mcp add --transport http --scope user evil https://cev-mcp.tail4ccb95.ts.net/mcp` and `... evil-raw https://cev-mcp-raw.tail4ccb95.ts.net/mcp` |
-| Codex | `codex mcp add evil --url https://cev-mcp.tail4ccb95.ts.net/mcp` and `codex mcp add evil-raw --url https://cev-mcp-raw.tail4ccb95.ts.net/mcp` |
-| Cursor | add `"evil": {"url": ".../8765/mcp"}` and `"evil-raw": {"url": ".../8767/mcp"}` under `mcpServers` in `~/.cursor/mcp.json` |
+| Claude Code | `claude mcp add --transport http --scope user evil https://cev-mcp.tail4ccb95.ts.net/mcp`, `... evil-raw https://cev-mcp-raw.tail4ccb95.ts.net/mcp` and `... cev-knowledge https://cev-knowledge.tail4ccb95.ts.net/mcp` |
+| Codex | `codex mcp add evil --url https://cev-mcp.tail4ccb95.ts.net/mcp`, the same for `evil-raw` (`https://cev-mcp-raw.tail4ccb95.ts.net/mcp`) and `cev-knowledge` (`https://cev-knowledge.tail4ccb95.ts.net/mcp`) |
+| Cursor | add `"evil"`, `"evil-raw"` and `"cev-knowledge"` entries (`{"url": "https://<name>.tail4ccb95.ts.net/mcp"}`, with `cev-mcp` / `cev-mcp-raw` / `cev-knowledge` as the names) under `mcpServers` in `~/.cursor/mcp.json` |
 
 Any other MCP client: Streamable HTTP transport, that URL, no auth.
 
@@ -101,6 +101,7 @@ or append `AGENTS.md` into your own project, or into `~/.codex/AGENTS.md`.
 - "Where is the raw recording covering Turn 7?"
 - "What recordings do we have from last weekend, and which ones didn't parse?"
 - "(raw) What topics are in that bag, and how many messages on each?"
+- "(docs) Where are the joulemeter specs?" / "How do I set up Tailscale on a new laptop?"
 
 ## Troubleshooting
 
@@ -122,7 +123,9 @@ or append `AGENTS.md` into your own project, or into `~/.codex/AGENTS.md`.
   Claude Code setup is tested by the author. The Codex and Cursor configs follow
   those clients' current documentation but have not been run end to end; fix the
   file and open a PR if one is off.
-- Only the two read ports (`:8765` curated, `:8767` raw SQL) are wired up here. EVIL's
+- `cev-knowledge` (`:8768`) searches the team's Confluence `cev` space, already filtered on the NUC:
+  no restricted or `no-tern` pages, no passwords (pages that hold them come back as links only).
+- Only the read ports (`:8765` curated, `:8767` raw SQL, `:8768` team docs) are wired up here. EVIL's
   separate upload port is not part of this repo.
 - Guidance lives once, in `AGENTS.md`. After editing it, run
   `scripts/sync-skill.sh` to regenerate the Claude skill

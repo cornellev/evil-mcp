@@ -12,7 +12,7 @@ trap 'rm -f "$tmp"' EXIT
   cat <<'HEADER'
 ---
 name: evil
-description: Query Cornell Electric Vehicles' EVIL telemetry database (runs, turns, laps, straights, energy, uploaded recordings) through the `evil` and `evil-raw` MCP servers. Use for any question about recorded car runs, turn or lap performance, or finding and inspecting raw recordings.
+description: Query Cornell Electric Vehicles' EVIL telemetry database (runs, turns, laps, straights, energy, uploaded recordings) through the `evil` and `evil-raw` MCP servers, and search the team's Confluence docs through `cev-knowledge`. Use for any question about recorded car runs, turn or lap performance, finding and inspecting raw recordings, or the team's design docs, specs, procedures and decisions.
 ---
 
 HEADER

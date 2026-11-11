@@ -5,6 +5,9 @@
     },
     "evil-raw": {
       "url": "https://cev-mcp-raw.tail4ccb95.ts.net/mcp"
+    },
+    "cev-knowledge": {
+      "url": "https://cev-knowledge.tail4ccb95.ts.net/mcp"
     }
   }
 }

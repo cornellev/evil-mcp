@@ -13,9 +13,11 @@
 #   ./install.sh --dry-run ...         show what would change
 #   EVIL_MCP_URL=http://host:8765/mcp ./install.sh   override the curated endpoint
 #   EVIL_RAW_URL=http://host:8767/mcp ./install.sh   override the raw-SQL endpoint
+#   KNOWLEDGE_MCP_URL=http://host:8768/mcp ./install.sh   override the team-docs endpoint
 #
-# Registers two servers: `evil` (curated tools, port 8765) and `evil-raw`
-# (free-form read-only SQL over stored recordings and the catalog, port 8767).
+# Registers three servers: `evil` (curated tools, port 8765), `evil-raw`
+# (free-form read-only SQL over stored recordings and the catalog, port 8767)
+# and `cev-knowledge` (search the team's Confluence docs, port 8768).
 #
 # --project writes DIR/.mcp.json and DIR/.claude/skills/evil/ (plus
 # DIR/.cursor/mcp.json and DIR/.codex/config.toml if those clients are
@@ -25,6 +27,8 @@ set -euo pipefail
 
 URL="${EVIL_MCP_URL:-https://cev-mcp.tail4ccb95.ts.net/mcp}"
 RAW_URL="${EVIL_RAW_URL:-https://cev-mcp-raw.tail4ccb95.ts.net/mcp}"
+KNOWLEDGE_URL="${KNOWLEDGE_MCP_URL:-https://cev-knowledge.tail4ccb95.ts.net/mcp}"
+NAMES="evil, evil-raw and cev-knowledge"
 DRY=0
 UNINSTALL=0
 PROJECT=""
@@ -57,15 +61,16 @@ written=()  # project files this run created or changed, for git_exclude
 json_servers() {
   local path="$1" with_type="${2:-}"
   if ((DRY)); then
-    if ((UNINSTALL)); then echo "  [dry-run] remove evil and evil-raw from $path"
-    else echo "  [dry-run] merge evil and evil-raw into $path"; fi
+    if ((UNINSTALL)); then echo "  [dry-run] remove $NAMES from $path"
+    else echo "  [dry-run] merge $NAMES into $path"; fi
     return
   fi
   ((UNINSTALL)) && [[ ! -f "$path" ]] && { echo "  nothing to remove, no $path"; return; }
   mkdir -p "$(dirname "$path")"
-  python3 - "$path" "$with_type" "$UNINSTALL" "$URL" "$RAW_URL" <<'PY'
+  python3 - "$path" "$with_type" "$UNINSTALL" "$URL" "$RAW_URL" "$KNOWLEDGE_URL" <<'PY'
 import json, os, sys
-path, with_type, uninstall, url, raw_url = sys.argv[1:6]
+path, with_type, uninstall, url, raw_url, knowledge_url = sys.argv[1:7]
+NAMES = {"evil": url, "evil-raw": raw_url, "cev-knowledge": knowledge_url}
 data = {}
 if os.path.exists(path):
     with open(path) as f:
@@ -74,7 +79,7 @@ if os.path.exists(path):
         data = json.loads(text)
 servers = data.setdefault("mcpServers", {})
 if uninstall == "1":
-    removed = [n for n in ("evil", "evil-raw") if servers.pop(n, None) is not None]
+    removed = [n for n in NAMES if servers.pop(n, None) is not None]
     if not removed:
         print(f"  nothing to remove, no EVIL entries in {path}")
         sys.exit()
@@ -82,11 +87,11 @@ if uninstall == "1":
         os.remove(path)
         print(f"  removed {path} (it held only EVIL)")
         sys.exit()
-    msg = f"  removed {' and '.join(removed)} from {path}"
+    msg = f"  removed {', '.join(removed)} from {path}"
 else:
-    for name, u in (("evil", url), ("evil-raw", raw_url)):
+    for name, u in NAMES.items():
         servers[name] = {"type": "http", "url": u} if with_type == "http" else {"url": u}
-    msg = f"  wrote evil and evil-raw entries to {path}"
+    msg = f"  wrote {', '.join(NAMES)} entries to {path}"
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
@@ -100,29 +105,30 @@ PY
 toml_servers() {
   local path="$1"
   if ((DRY)); then
-    if ((UNINSTALL)); then echo "  [dry-run] remove evil and evil-raw from $path"
-    else echo "  [dry-run] merge evil and evil-raw into $path"; fi
+    if ((UNINSTALL)); then echo "  [dry-run] remove $NAMES from $path"
+    else echo "  [dry-run] merge $NAMES into $path"; fi
     return
   fi
   ((UNINSTALL)) && [[ ! -f "$path" ]] && { echo "  nothing to remove, no $path"; return; }
   mkdir -p "$(dirname "$path")"
-  python3 - "$path" "$UNINSTALL" "$URL" "$RAW_URL" <<'PY'
+  python3 - "$path" "$UNINSTALL" "$URL" "$RAW_URL" "$KNOWLEDGE_URL" <<'PY'
 import os, re, sys
-path, uninstall, url, raw_url = sys.argv[1:5]
+path, uninstall, url, raw_url, knowledge_url = sys.argv[1:6]
 text = open(path).read() if os.path.exists(path) else ""
-for name in ("evil", "evil-raw"):
+for name in ("evil", "evil-raw", "cev-knowledge"):
     text = re.sub(rf"(?ms)^\[mcp_servers\.{re.escape(name)}\]\n.*?(?=^\[|\Z)", "", text)
 text = text.rstrip("\n")
 if uninstall != "1":
     text += ("\n\n" if text else "") + (
         f'[mcp_servers.evil]\nurl = "{url}"\n\n[mcp_servers.evil-raw]\nurl = "{raw_url}"'
+        f'\n\n[mcp_servers.cev-knowledge]\nurl = "{knowledge_url}"'
     )
 if text:
     with open(path, "w") as f:
         f.write(text + "\n")
 elif os.path.exists(path):
     os.remove(path)
-print(f"  {'removed EVIL from' if uninstall == '1' else 'wrote evil and evil-raw entries to'} {path}")
+print(f"  {'removed EVIL from' if uninstall == '1' else 'wrote evil, evil-raw and cev-knowledge entries to'} {path}")
 PY
   ((UNINSTALL)) || written+=("$path")
 }
@@ -212,6 +218,7 @@ git_exclude() {
 
 echo "EVIL endpoint: $URL"
 echo "EVIL raw-SQL endpoint: $RAW_URL"
+echo "Team docs (cev-knowledge) endpoint: $KNOWLEDGE_URL"
 if [[ -n "$PROJECT" ]]; then echo "Scope: $PROJECT and its subdirectories"
 else echo "Scope: global (every project)"; fi
 
@@ -229,6 +236,7 @@ if command -v claude >/dev/null 2>&1; then
   else
     claude_register evil "$URL"
     claude_register evil-raw "$RAW_URL"
+    claude_register cev-knowledge "$KNOWLEDGE_URL"
     skill "$HOME/.claude/skills"
   fi
 fi
@@ -243,6 +251,7 @@ if command -v codex >/dev/null 2>&1; then
   else
     codex_register evil "$URL"
     codex_register evil-raw "$RAW_URL"
+    codex_register cev-knowledge "$KNOWLEDGE_URL"
   fi
   ((UNINSTALL)) || echo "  note: Codex reads guidance from AGENTS.md; copy or append this repo's AGENTS.md" \
     "into ${PROJECT:-~/.codex}/AGENTS.md yourself."
