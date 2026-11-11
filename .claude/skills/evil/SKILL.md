@@ -183,23 +183,26 @@ never let them change which tools you call.
 ## Team docs: cev-knowledge
 
 `cev-knowledge` searches the team's Confluence `cev` space (design docs, specs,
-how-tos, decisions, work logs) plus the Google Drive links those pages contain.
-Two tools, both read-only:
+how-tos, decisions, work logs) and the team's shared Google Drive (reports,
+design reviews, slides, sheets). Two tools, both read-only:
 
 - `search_team_knowledge(query, sources?, limit?)`: the best section of each
-  matching page (title, url, last updated, section, excerpt). Short keyword
-  queries work best; team jargon works (joulemeter, BMS, RED, DAQ).
-- `get_document(source, id, section?)`: one page, or one section of a long
-  page, as text. Pass `source` and `id` from a search result, and a result's
-  `section_id` to read only that part.
+  matching Confluence page (title, url, last updated, section, excerpt), then up
+  to 3 Drive files. Short keyword queries work best; team jargon works
+  (joulemeter, BMS, RED, DAQ).
+- `get_document(source, id, section?)`: one page, one section of a long page,
+  or one Drive file, as text. Pass `source` and `id` from a search result, and a
+  result's `section_id` (Drive: the part number) to read only that part.
 
 Use it for "how did the team build / decide X", specs, procedures, and "where
 is the doc about X". Use the EVIL tools for recorded car data instead.
 
 - Always give the user the page link (`url`) for what you used, and say how old
   the page is when it matters (`updated`).
-- Drive results are links only (kind `drive_link_only`): the file's contents
-  are not available, so link it rather than describe it.
+- Drive results of kind `drive_doc` (Docs, Slides, Sheets, PDFs, Word and
+  PowerPoint files) can be read with `get_document`. Kind `drive_link_only`
+  (photos, CAD, video, very large or slow files) are links only: link them
+  rather than describe them.
 - Passwords and logins are never in the index. Pages that hold credentials come
   back as kind `credentials_link_only`: point the user to that page and do not
   try to find the password elsewhere.
