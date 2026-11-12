@@ -203,6 +203,10 @@ is the doc about X". Use the EVIL tools for recorded car data instead.
   PowerPoint files) can be read with `get_document`. Kind `drive_link_only`
   (photos, CAD, video, very large or slow files) are links only: link them
   rather than describe them.
+- Files attached to Confluence pages are results too: kind `attachment` (PDFs,
+  decks, Word files; read them with `get_document`) or `attachment_link_only`
+  (zips, videos, big files: name, type and link). Their `breadcrumb` ends with
+  the page they are attached to.
 - Passwords and logins are never in the index. Pages that hold credentials come
   back as kind `credentials_link_only`: point the user to that page and do not
   try to find the password elsewhere.
